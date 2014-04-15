@@ -74,45 +74,54 @@ mysql_select_db (dbname) or die ("I cannot select the database '$dbname' because
 //$db = new PDO('sqlite:/var/db/craigslist.db');
 //$db=mysqli_connect("localhost","root","eimajimi","craigslist");
 
+function query_block($id,$term,$categories,$sub,$include = false){
+    global $abr,$wle;
+
+    echo "<div class=\"searchquery\" id =\"query_".$id."\">";
+    echo "<div class=\"searchquery_key\">".$id."</div>";
+    echo "<div class=\"include_".$id."\"><input type=\"checkbox\" id=\"include_".$id."\" value=\"include\" ".($include?'checked':'').">include</div>";
+
+    echo "<form id=\"searchquery_".$id."\" ><input type=\"text\" id=\"term_".$id."\" value=\"".$term."\" size=\"11px\">".''."<br>";
+
+    $cats = split(',',$categories);
+
+    echo "<br><select id=\"cat_".$id."\" onchange=\"add_cat(".$id.")\">";
+    echo "<option value=\"none\">select catergories</option>";
+    for ($i=0; $i<count($wle); $i++){
+        echo "<option value=\"".$wle[$i]."\">".$wle[$i]."</option>";
+    }
+    echo "</select><br>";
+   
+    echo "<table id=\"cat_table_".$id."\">";
+    for ($i=0; $i<count($abr); $i++){
+        echo "<tr id=\"cat_row_".$id."_".$wle[$i]."\"";
+        if( in_array($abr[$i],$cats) != False ){
+            echo " style = \"display:block\"><td>";
+        }else{
+            echo " style = \"display:none\"><td>";
+        }
+        echo $wle[$i]."</td></tr>";
+    }
+    echo "</table>";
+    
+    echo "<br><input type=\"text\" id=\"sub_".$id."\" value=\"".$sub."\" size=\"4px\">sub-city";
+    echo "</form></div>";
+}
+
 if($_GET['p']=='search'){//just look at the search stuff
 
     $result = mysql_query('SELECT * FROM queries');
-    //$count = 0;
+    $count = 0;
     while ($row = mysql_fetch_array($result)) {
-        echo "<div class=\"searchquery\" id =\"query_".$count."\">";
-        echo "<div class=\"searchquery_key\">".$row["key"]."</div>";
-        echo "<div class=\"include_".$count."\"><input type=\"checkbox\" id=\"include_".$count."\" value=\"include\">include</div>";
-
-        echo "<form id=\"searchquery_".$count."\" ><input type=\"text\" id=\"term_".$count."\" value=\"".$row["term"]."\" size=\"11px\">".''."<br>";
-
-        $cats = split(',',$row["categories"]);
-
-        echo "<br><select id=\"cat_".$row["key"]."\" onchange=\"add_cat(".$row["key"].")\">";
-        echo "<option value=\"none\">select catergories</option>";
-        for ($i=0; $i<count($wle); $i++){
-            echo "<option value=\"".$wle[$i]."\">".$wle[$i]."</option>";
-        }
-        echo "</select><br>";
-       
-        echo "<table id=\"cat_table_".$row["key"]."\">";
-        for ($i=0; $i<count($abr); $i++){
-            echo "<tr id=\"cat_row_".$row["key"]."_".$wle[$i]."\"";
-            if( in_array($abr[$i],$cats) != False ){
-                echo " style = \"display:block\"><td>";
-                //echo $wle[$i] . "&nbsp";
-            }else{
-                echo " style = \"display:none\"><td>";
-            }
-            echo $wle[$i]."</td></tr>";
-        }
-        echo "</table>";
-        
-        echo "<br><input type=\"text\" id=\"sub_".$row["key"]."\" value=\"".$row["subtown"]."\" size=\"4px\">sub-city";
-        echo "</form></div>";
-        //$count++;
-        //echo $count($cats);
-        //echo $row["categories"];
+        query_block( $row["key"],$row["term"],$row["categories"],$row["subtown"] );
+        $count++;
     }
+
+    $n_add = ($_GET['n'] ? $_GET['n'] : 1 );
+    for($i=0; $i<$n_add; $i++){
+        query_block( $count+$i+1, '', 'sss', 'wch', true );
+    }
+
 
 }else{//show the listings
 
