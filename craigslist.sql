@@ -1,0 +1,20 @@
+CREATE TABLE `listings` (
+`key` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+`url` TEXT NOT NULL ,
+`imgurl` TEXT NOT NULL ,
+`title` TEXT NOT NULL ,
+`text` TEXT NOT NULL ,
+`tagcat` TEXT NOT NULL ,
+`tagterm` TEXT NOT NULL ,
+`url` TEXT NOT NULL ,
+`last_update` DATETIME NOT NULL ,
+`found` DATETIME NOT NULL ,
+`new` BOOL NOT NULL DEFAULT '0'
+);
+
+CREATE TABLE `queries`(
+	`key` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+	`term` TEXT NOT NULL ,
+	`categories` TEXT NOT NULL ,
+	`subtown` TEXT NOT NULL
+)
