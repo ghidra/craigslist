@@ -2,6 +2,11 @@
 <head>
 <title>craiglist</title>
  
+<!---
+remove categories from list with button
+submit button to parse data and save to db
+-->
+
 <style type="text/css">
 	body{
     	font-family: Georgia, "Times New Roman",Times, serif;
@@ -45,10 +50,92 @@
 </style>
 
 <script>
-function add_cat(cat){
-    var mylist=document.getElementById("cat_"+cat);
-    document.getElementById("cat_row_"+cat+"_"+ mylist.options[mylist.selectedIndex].text ).style.display = 'block';
+function check_include_box(id){
+    var form_enabled = document.getElementById("include_"+id);
+    if(!form_enabled.checked){
+        form_enabled.checked = true;
+    }
 }
+function add_cat(id){
+    var mylist=document.getElementById("cat_"+id);
+    document.getElementById("cat_row_"+id+"_"+ mylist.options[mylist.selectedIndex].text ).style.display = 'block';
+    check_include_box(id);
+}
+function submit_forms(){
+    s="";
+    var my_forms = document.getElementById("forms_container");
+    var blocks = my_forms.childNodes;
+    var json = [];
+    for(var i = 0; i < blocks.length; i++) {
+        var id = blocks[i].getAttribute("id").split("_").pop();
+        var form = document.getElementById("searchquery_"+id);
+        var form_enabled = document.getElementById("include_"+id);
+
+        if(form_enabled.checked){//only deal with the checked ones
+            var entry = {
+                type : "",
+                id : -1,
+                term : "",
+                cat : "",
+                sub : ""
+            };
+            var update_type = form.className;
+            entry.type = update_type.split("_")[1];
+            entry.id = id;
+            for (var f = 0; f< form.elements.length; f++){
+                //s+=form[f].id+":";
+                switch(form[f].id){
+                    case "term_"+id:
+                       // s+=form[f].value;
+                       entry.term = form[f].value;
+                        break;
+                    case "cat_"+id:
+                        cat_array = [];
+                        table = document.getElementById("cat_table_"+id);
+                        for(var t = 0; t<table.rows.length; t++ ){
+                            //s+=table.rows[t].style.display;
+                            if(table.rows[t].style.display != 'none'){
+                                cat_array.push(table.rows[t].cells[1].innerHTML);
+                            }
+                        }
+                        //s+='fuck';
+                        //s+=cat_array.toString();
+                        entry.cat = cat_array.toString();
+                        break;
+                    case "sub_"+id:
+                        entry.sub = form[f].value;
+                        //s+=form[f].value;
+                        break;
+                }
+            }
+            json[id] = entry;
+            //s+=form_enabled.checked;
+        }
+        //s+="!!";
+        //searchquery_
+    }
+    post_forms( JSON.stringify(json) );
+    //alert(s);
+}
+
+function post_forms(data){
+    if (window.XMLHttpRequest) {
+        // code for IE7+, Firefox, Chrome, Opera, Safari
+        xmlhttp=new XMLHttpRequest();
+    } else { // code for IE6, IE5
+        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    xmlhttp.onreadystatechange=function() {
+        if (xmlhttp.readyState==4 && xmlhttp.status==200) {
+            //alert('added search terms');
+            alert(xmlhttp.responseText);
+        }
+    }
+    xmlhttp.open("GET","dbi.php?act=add&data="+data,true);
+    xmlhttp.send();
+
+}
+
 </script>
 
 </head>
@@ -63,7 +150,8 @@ $wle = array("everything","antiques","baby and kids","barter","bikes","boats","b
 if (!isset($_SESSION)) {
     session_start();
 }
-$dbhost = '127.0.0.1';//:3307
+include "db.php";
+/*$dbhost = '127.0.0.1';//:3307
 $dbuser = 'root';
 $dbpass = 'eimajimi';
 define('dbname','craigslist');
@@ -71,17 +159,20 @@ define('dbname','craigslist');
 // make a connection to mysql here
 $db = mysql_connect ($dbhost, $dbuser, $dbpass) or die ("I cannot connect to the database because: " . mysql_error());
 mysql_select_db (dbname) or die ("I cannot select the database '$dbname' because: " . mysql_error());
+*/
 //$db = new PDO('sqlite:/var/db/craigslist.db');
 //$db=mysqli_connect("localhost","root","eimajimi","craigslist");
 
-function query_block($id,$term,$categories,$sub,$include = false){
+function query_block($id,$term,$categories,$sub,$update = "update",$include = false){
     global $abr,$wle;
 
     echo "<div class=\"searchquery\" id =\"query_".$id."\">";
     echo "<div class=\"searchquery_key\">".$id."</div>";
-    echo "<div class=\"include_".$id."\"><input type=\"checkbox\" id=\"include_".$id."\" value=\"include\" ".($include?'checked':'').">include</div>";
 
-    echo "<form id=\"searchquery_".$id."\" ><input type=\"text\" id=\"term_".$id."\" value=\"".$term."\" size=\"11px\">".''."<br>";
+    echo "<form id=\"searchquery_".$id."\" class=\"searchquery_".$update."\">";
+
+    echo "<input type=\"checkbox\" id=\"include_".$id."\" value=\"include\" ".($include?'checked':'').">include<br>";
+    echo "<input type=\"text\" id=\"term_".$id."\" value=\"".$term."\" size=\"11px\" onchange =\"check_include_box(".$id.")\">".''."<br>";
 
     $cats = split(',',$categories);
 
@@ -100,27 +191,39 @@ function query_block($id,$term,$categories,$sub,$include = false){
         }else{
             echo " style = \"display:none\"><td>";
         }
-        echo $wle[$i]."</td></tr>";
+        echo $wle[$i]."<td>".$abr[$i]."</td></td></tr>";
     }
     echo "</table>";
     
-    echo "<br><input type=\"text\" id=\"sub_".$id."\" value=\"".$sub."\" size=\"4px\">sub-city";
+    echo "<br><input type=\"text\" id=\"sub_".$id."\" value=\"".$sub."\" size=\"4px\" onchange =\"check_include_box(".$id.")\">sub-city";
     echo "</form></div>";
+}
+function submit_button(){
+    return "<button type=\"button\" onclick = \"submit_forms()\">Submit</button><br>";
 }
 
 if($_GET['p']=='search'){//just look at the search stuff
+
+    echo submit_button();
+    echo "<div id=\"forms_container\">";
 
     $result = mysql_query('SELECT * FROM queries');
     $count = 0;
     while ($row = mysql_fetch_array($result)) {
         query_block( $row["key"],$row["term"],$row["categories"],$row["subtown"] );
-        $count++;
+        if($row["key"]>$count){
+            $count = $row["key"];
+        }
+        //$count++;
     }
 
     $n_add = ($_GET['n'] ? $_GET['n'] : 1 );
     for($i=0; $i<$n_add; $i++){
-        query_block( $count+$i+1, '', 'sss', 'wch', true );
+        query_block( $count+$i+1, '', 'sss', 'wch','new');
     }
+
+    echo "</div>";
+    echo submit_button();
 
 
 }else{//show the listings
