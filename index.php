@@ -58,7 +58,15 @@ function check_include_box(id){
 }
 function add_cat(id){
     var mylist=document.getElementById("cat_"+id);
-    document.getElementById("cat_row_"+id+"_"+ mylist.options[mylist.selectedIndex].text ).style.display = 'block';
+    //if this is already visible, hide it.
+    var element = document.getElementById("cat_row_"+id+"_"+ mylist.options[mylist.selectedIndex].text );
+    if(element.style.display == 'none'){
+        element.style.display = 'block';
+    }else{
+        element.style.display = 'none';
+    }
+    //set it back to the default value, helps if we want to remove the last category
+    mylist.selectedIndex = 0;
     check_include_box(id);
 }
 function submit_forms(){
@@ -70,6 +78,7 @@ function submit_forms(){
         var id = blocks[i].getAttribute("id").split("_").pop();
         var form = document.getElementById("searchquery_"+id);
         var form_enabled = document.getElementById("include_"+id);
+        var delete_form = document.getElementById("delete_"+id);
 
         if(form_enabled.checked){//only deal with the checked ones
             var entry = {
@@ -77,7 +86,8 @@ function submit_forms(){
                 id : -1,
                 term : "",
                 cat : "",
-                sub : ""
+                sub : "",
+                del : 0
             };
             var update_type = form.className;
             entry.type = update_type.split("_")[1];
@@ -106,6 +116,11 @@ function submit_forms(){
                         entry.sub = form[f].value;
                         //s+=form[f].value;
                         break;
+                    case "delete_"+id:
+                        if(delete_form.checked){
+                            entry.del = 1;
+                        }
+                        break;
                 }
             }
             json[id] = entry;
@@ -129,6 +144,7 @@ function post_forms(data){
         if (xmlhttp.readyState==4 && xmlhttp.status==200) {
             //alert('added search terms');
             alert(xmlhttp.responseText);
+            location.reload();
         }
     }
     xmlhttp.open("GET","dbi.php?act=add&data="+data,true);
@@ -147,9 +163,6 @@ function post_forms(data){
 $abr = array("sss","ata","baa","bar","bia","boo","bka","bfa","sya","zip","fua","foa","has","jwa","maa","rva","sga","tia","tla","waa","ppa","ara","sna","pta","haa","ema","moa","cla","cba","ela","gra","gms","hva","msa","pha","taa","vga");
 $wle = array("everything","antiques","baby and kids","barter","bikes","boats","books","business","computer","free stuff","furniture","general","household","jewlery","materials","rv and camp","sports","tickets","tools","wanted","appliances","art and crafts","atv/utv/sno","autoparts","beauty and health","cds dvds vhs","cell phones","clothes and acc","colletibles","electronics","farm and garden","garage sale","heavy equipment","music instruments","photo equipment","toys and games","video games");
 
-if (!isset($_SESSION)) {
-    session_start();
-}
 include "db.php";
 /*$dbhost = '127.0.0.1';//:3307
 $dbuser = 'root';
@@ -191,11 +204,14 @@ function query_block($id,$term,$categories,$sub,$update = "update",$include = fa
         }else{
             echo " style = \"display:none\"><td>";
         }
-        echo $wle[$i]."<td>".$abr[$i]."</td></td></tr>";
+        echo $wle[$i]."<td style = \"display:none\">".$abr[$i]."</td></td></tr>";
     }
     echo "</table>";
     
-    echo "<br><input type=\"text\" id=\"sub_".$id."\" value=\"".$sub."\" size=\"4px\" onchange =\"check_include_box(".$id.")\">sub-city";
+    echo "<br><input type=\"text\" id=\"sub_".$id."\" value=\"".$sub."\" size=\"4px\" onchange =\"check_include_box(".$id.")\">sub-city</br>";
+    if($update == "update"){
+        echo "<input type=\"checkbox\" id=\"delete_".$id."\" value=\"delete\" >delete";
+    }
     echo "</form></div>";
 }
 function submit_button(){
