@@ -57,12 +57,7 @@ taa = toys and games
 vga = video games
 '''
 
-### Search Parameters ###
 
-search_terms = ["playset","playground","welder","lumber"]
-search_categories = [['sss'],['baa','zip'],['zip','tla'],['zip']]
-search_city = ["wch","wch","wch","wch"]
-### Database Information ###
 
 #db_file = "/var/db/craigslist.db"
 db = MySQLdb.connect(host="localhost", # your host, usually localhost
@@ -72,9 +67,31 @@ db = MySQLdb.connect(host="localhost", # your host, usually localhost
 
 ### Craigslist RSS Search URL ###
 
-rss_generic_link = "http://"+subcity+".craigslist.org/search/sss/"+subtown+"?catAbb=%s&query=%s&s=0&format=rss"
+
+### Search Parameters ###
+
+#search_terms = ["playset","playground","welder","lumber"]
+#search_categories = [['sss'],['baa','zip'],['zip','tla'],['zip']]
+#search_city = ["wch","wch","wch","wch"]
 
 db_cursor = db.cursor()
+
+db_cursor.execute("""SELECT * FROM queries""")
+r=db_cursor.fetchall()
+#r.fetch_row(0,1);#get all the results, and return them as dictionaries
+search_terms = []
+search_categories = []
+search_city = []
+for row in r:
+		search_terms.append(row[1]);
+		search_categories.append(row[2].split(","));
+		search_city.append(row[3]);
+### Database Information ###
+
+
+rss_generic_link = "http://"+subcity+".craigslist.org/search/sss/"+subtown+"?catAbb=%s&query=%s&s=0&format=rss"
+
+
 
 # Generate the RSS links
 rss_links = []
@@ -123,6 +140,8 @@ for rss_link in rss_links:
 		#db_cursor.execute("""SELECT last_update FROM listings WHERE title = ?""", (title,))
 		db_cursor.execute("""SELECT last_update FROM listings WHERE title = %s""",(title,))
 		#r=db.store_result()
+
+		#print url+"---"+imgurl+"---"+title+"---"+text+"---"+lis+"---"+term+"---"+update_time;
 
 		if db_cursor.fetchone() == None:
 			db_cursor.execute("""

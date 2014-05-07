@@ -3,8 +3,9 @@
 <title>craiglist</title>
  
 <!---
-remove categories from list with button
-submit button to parse data and save to db
+its not getting the categories right when seding it to mysql
+
+the pytonh script is breaking now, for whatever damn reason, som inicode crap
 -->
 
 <style type="text/css">
